@@ -22,23 +22,19 @@ class HomeActivity : AppCompatActivity() {
             when (it.itemId) {
                 R.id.home -> {
                     navController.navigate(R.id.action_to_maps)
-                    this.fragmentManager.popBackStack()
                     true
                 }
 
                 R.id.chat -> {
                     navController.navigate(R.id.action_to_chat)
-                    this.fragmentManager.popBackStack()
                     true
                 }
                 R.id.history -> {
                     navController.navigate(R.id.action_to_history)
-                    this.fragmentManager.popBackStack()
                     true
                 }
                 R.id.profile -> {
                     navController.navigate(R.id.action_to_profile)
-                    this.fragmentManager.popBackStack()
                     true
                 }
                 else -> {

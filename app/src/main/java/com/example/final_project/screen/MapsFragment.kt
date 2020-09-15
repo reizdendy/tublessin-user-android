@@ -11,6 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
+import androidx.navigation.NavController
+import androidx.navigation.Navigation
 import com.example.final_project.R
 import com.example.final_project.domain.user.UserLocation
 import com.example.final_project.domain.user.UserViewModel
@@ -26,27 +29,25 @@ import kotlinx.android.synthetic.main.fragment_maps.*
 
 class MapsFragment : Fragment(), View.OnClickListener {
 
-    private lateinit var map:GoogleMap
+    private lateinit var map: GoogleMap
     private val userViewModel = UserViewModel()
     private val REQUEST_LOCATION_PERMISSION = 1
     private lateinit var userId: String
+    lateinit var navController: NavController
 
     private val callback = OnMapReadyCallback { googleMap ->
-        /**
-         * Manipulates the map once available.
-         * This callback is triggered when the map is ready to be used.
-         * This is where we can add markers or lines, add listeners or move the camera.
-         * In this case, we just add a marker near Sydney, Australia.
-         * If Google Play services is not installed on the device, the user will be prompted to
-         * install it inside the SupportMapFragment. This method will only be triggered once the
-         * user has installed Google Play services and returned to the app.
-         */
-
         map = googleMap
         enableMyLocation()
-//        val sydney = LatLng(-34.0, 151.0)
-//        googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-//        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        userViewModel.requestGetUserDetail(userId)
+        userViewModel.getUserAccountInfo().observe(viewLifecycleOwner, Observer {
+            var lat = it.result.profile.location.latitude
+            var long = it.result.profile.location.longitude
+            var userPosition = LatLng(lat, long)
+            googleMap.addMarker(
+                MarkerOptions().position(userPosition).title("Marker in User Position")
+            )
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(userPosition))
+        })
     }
 
     override fun onCreateView(
@@ -61,7 +62,8 @@ class MapsFragment : Fragment(), View.OnClickListener {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
-        getCurrentLocation.setOnClickListener(this)
+        navController= Navigation.findNavController(view)
+
         Prefs.Builder()
             .setContext(this.activity)
             .setMode(ContextWrapper.MODE_PRIVATE)
@@ -70,6 +72,8 @@ class MapsFragment : Fragment(), View.OnClickListener {
             .build()
 
         userId = Prefs.getString("id", "0")
+
+        findNearByMontir.setOnClickListener(this)
     }
 
     override fun onRequestPermissionsResult(
@@ -115,17 +119,22 @@ class MapsFragment : Fragment(), View.OnClickListener {
     }
 
     override fun onClick(v: View?) {
-        when(v){
-            getCurrentLocation -> {
-                map.clear()
-                val userPosition = LatLng(map.myLocation.latitude, map.myLocation.longitude)
-                map.addMarker(MarkerOptions().position(userPosition).title("Marker in Montir Position"))
-                map.moveCamera(CameraUpdateFactory.newLatLng(userPosition))
-
-                userViewModel.updateUserLocation(
-                    userId,
-                    UserLocation(map.myLocation.latitude, map.myLocation.longitude)
-                )
+        when (v) {
+            findNearByMontir -> {
+                Prefs.putString("userLatitude", map.myLocation.latitude.toString())
+                Prefs.putString("userLongitude", map.myLocation.longitude.toString())
+                navController.navigate(R.id.action_mapsFragment_to_findNearByMontirFragment)
+//                map.clear()
+//                val userPosition = LatLng(map.myLocation.latitude, map.myLocation.longitude)
+//                map.addMarker(
+//                    MarkerOptions().position(userPosition).title("Marker in User Position")
+//                )
+//                map.moveCamera(CameraUpdateFactory.newLatLng(userPosition))
+//
+//                userViewModel.updateUserLocation(
+//                    userId,
+//                    UserLocation(map.myLocation.latitude, map.myLocation.longitude)
+//                )
             }
         }
     }
